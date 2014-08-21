@@ -1,0 +1,105 @@
+<!doctype html>
+
+<head>
+<title>Hello from Flask</title>
+{% if name %}
+<h1>Hello {{ name }}!</h1>
+{% else %}
+<h1>Hello 猜猜我是谁？︶ε╰✿</h1>
+{% endif %}
+</head>
+
+<script>
+    var a = "美团";
+    var names = "";
+    var paths = "";
+    var current_index = 0;
+    var nstatus = 1;
+    var interid = 0;
+    var imgs = new Array();
+    function start(){
+        var d = document.getElementById("name");
+        var btn_sn = document.getElementById("showname");
+        var n = document.getElementById("next");
+        btn_sn.disabled=true;
+        d.innerHTML = "";
+        n.innerHTML = "停!";
+        n.setAttribute("onclick", "stop()");
+        interid = self.setInterval("change()", {{ interval_ms }});
+    }
+    function change() {
+        var p = document.getElementById("pic");
+        var n = document.getElementById("next");
+        var random = 0;
+        random = Math.floor(Math.random()*names.length);
+        current_index = random;
+        n.setAttribute("onclick", "stop()");
+
+        img = imgs[current_index];
+        var w = img.width;
+        var h = img.height;
+        var new_w = 0;
+        var new_h = 0;
+        if (w == 0)
+        {
+            p.removeAttribute("width"); 
+            p.removeAttribute("height"); 
+        }
+        else
+        {
+            var ratio = {{ weight_px }}/w;
+            new_w = {{ weight_px }};
+            new_h = ratio * h;
+            p.width = new_w;
+            p.height = new_h;
+        }
+        p.src = paths[current_index]
+    }
+    function stop() {
+        var n = document.getElementById("next");
+        var btn_sn = document.getElementById("showname");
+        btn_sn.disabled=false;
+        nstatus = 0;
+        n.innerHTML = "再来一张!";
+        n.setAttribute("onclick", "start()");
+        window.clearInterval(interid);
+    }
+
+    function showname(){
+        document.getElementById("name").innerHTML = names[current_index];
+    }
+
+    function load_names()
+    {
+        var xmlhttp;
+        xmlhttp=new XMLHttpRequest();
+        xmlhttp.onreadystatechange=function(){
+            if (xmlhttp.readyState==4 && xmlhttp.status==200)
+            {
+                var jsonstr=xmlhttp.responseText;
+                var jsonobj=eval('('+jsonstr+')'); 
+                names = jsonobj[0];
+                paths = jsonobj[1];
+            }
+            for (var i=0;i<paths.length;i++) {
+                var img = new Image();
+                img.src = paths[i];
+                imgs.push(img);
+            }
+        }
+        xmlhttp.open("GET","/allpics",true);
+        xmlhttp.send();
+    }
+
+</script>
+
+<body onLoad="load_names()">
+<section align="center">
+    <button id="showname" type="button" disabled=true onclick="showname()">这是谁？</button>
+    <button id="next" type="button" onclick="start()">再来一张</button>
+    <br />
+    <p><b id="name"></b></p>
+    <br />
+    <img id="pic" src="/static/mt.png" title="美团专用">
+</section>
+</body>
